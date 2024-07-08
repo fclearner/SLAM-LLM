@@ -157,11 +157,15 @@ def main(kwargs: DictConfig):
     # model.half()
     # with open(f".{rank}.done", "w"):
     #     pass
-
-
+    import json
+    from pathlib import Path
+    deepspeed_content = {}
+    with open(Path(deepspeed_config), "r", encoding="utf-8") as file:
+        deepspeed_content = file.read()
+    deepspeed_content = json.loads(deepspeed_content)
     # Initialize the optimizer and learning rate scheduler
     model_engine, _, _, _ = deepspeed.initialize(
-        model=model, model_parameters=parameters, config=deepspeed_config
+        model=model, model_parameters=parameters, config=deepspeed_content
     )
 
     

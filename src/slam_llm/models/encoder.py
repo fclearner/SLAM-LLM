@@ -128,6 +128,24 @@ class HubertEncoder:
         return model
 
 
+# class HubertEncoder:
+
+#     @classmethod
+#     def load(cls, model_config):
+#         import fairseq
+#         models, cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task([model_config.encoder_path])
+#         model = models[0]
+#         if model_config.encoder_type == "pretrain":
+#             pass
+#         elif model_config.encoder_type == "finetune":
+#             pass
+#             # model.final_proj = None
+#             # model.apply_mask = False
+#         else:
+#             assert model_config.encoder_type in ["pretrain", "finetune"], "input_type must be one of [pretrain, finetune]" 
+#         return model
+
+
 class HfTextEncoder:
 
     @classmethod
