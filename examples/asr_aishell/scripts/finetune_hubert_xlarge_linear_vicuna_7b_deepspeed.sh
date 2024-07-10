@@ -16,33 +16,34 @@ run_dir=/root/autodl-tmp/SLAM-LLM
 cd $run_dir
 code_dir=examples/asr_aishell
 
-speech_encoder_path=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/models/chinese-hubert-large/chinese-hubert-large-fairseq-ckpt.pt
-#/root/autodl-tmp/hubert_xtralarge_ll60k_finetune_ls960.pt
+speech_encoder_path=/root/autodl-tmp/hubert_xtralarge_ll60k_finetune_ls960.pt
 #/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/models/chinese-hubert-large/chinese-hubert-large-fairseq-ckpt.pt
 #/root/autodl-tmp/hubert_xtralarge_ll60k_finetune_ls960.pt
 
-llm_path=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/models/Qwen2-7B/
+llm_path=/root/autodl-tmp/Vicuna-7B
+#/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/models/Qwen2-7B/
 
-output_dir=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/exp/qwen2-7b-aishell-linear-steplrwarmupkeep1e-4-hubert-$(date +"%Y%m%d")-deepspeed
+output_dir=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/exp/vicuna-7b-aishell-linear-steplrwarmupkeep1e-4-hubert-xlarge-$(date +"%Y%m%d")-deepspeed-exp2
 
 hydra_args="
 hydra.run.dir=$output_dir \
-++model_config.llm_name=qwen2-7b \
+++model_config.llm_name=vicuna-7b-v1.5 \
 ++model_config.llm_path=$llm_path \
-++model_config.llm_dim=3584 \
+++model_config.llm_dim=4096 \
 ++model_config.encoder_name=hubert \
+++model_config.normalize=true \
+++dataset_config.normalize=true \
 ++model_config.encoder_projector_ds_rate=5 \
 ++model_config.encoder_path=$speech_encoder_path \
-++model_config.encoder_dim=1024 \
+++model_config.encoder_dim=1280 \
+++model_config.encoder_type=finetune \
 ++model_config.encoder_projector=linear \
-++model_config.encoder_type=pretrain \
 ++dataset_config.dataset=speech_dataset \
 ++dataset_config.train_data_path=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/data/train_data.jsonl \
 ++dataset_config.val_data_path=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/data/dev_data.jsonl \
 ++dataset_config.input_type=raw \
-++dataset_config.prompt="语音转写成文本" \
 ++train_config.model_name=asr \
-++train_config.num_epochs=3 \
+++train_config.num_epochs=6 \
 ++train_config.enable_deepspeed=true \
 ++train_config.freeze_encoder=true \
 ++train_config.freeze_llm=true \
@@ -50,10 +51,8 @@ hydra.run.dir=$output_dir \
 ++train_config.warmup_steps=1000 \
 ++train_config.total_steps=100000 \
 ++train_config.lr=1e-4 \
-++train_config.validation_interval=2000 \
-++train_config.batch_size_training=6 \
-++train_config.quantization=true \
-++train_config.use_fast_kernels=true \
+++train_config.validation_interval=1000 \
+++train_config.batch_size_training=4 \
 ++train_config.val_batch_size=4 \
 ++train_config.num_workers_dataloader=4 \
 ++train_config.output_dir=$output_dir \
@@ -74,31 +73,12 @@ hydra.run.dir=$output_dir \
 #++log_config.wandb_exp_name=${0##*/%.*} \
 #++log_config.log_interval 5 \
 
-# -m debugpy --listen 5678 --wait-for-client
-# if [[ $CUDA_VISIBLE_DEVICES != *","* ]]; then
-#     python -m debugpy --listen 5678 --wait-for-client $code_dir/finetune_asr.py \
-#         --config-path "conf" \
-#         --config-name "prompt.yaml" \
-#         $hydra_args
-# else
-# torchrun \
-#     --nnodes 1 \
-#     --nproc_per_node 1 \
-#     --master_port=29503 \
-#     $code_dir/finetune_asr.py \
-#     --config-path "conf" \
-#     --config-name "prompt.yaml" \
-#     ++train_config.enable_fsdp=true \
-#     ++train_config.enable_ddp=true \
-#     ++train_config.use_fp16=true \
-#     $hydra_args
-# fi
-
 deepspeed \
     --include localhost:0 \
+    --master_port=29502 \
     $code_dir/deepspeed_finetune_asr.py \
     $hydra_args
-    # --num_gpus=1 \
+    # --num_gpus=2 \
     # --num_nodes=1 \
 
 # -m debugpy --listen 5678 --wait-for-client

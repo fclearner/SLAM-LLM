@@ -124,3 +124,4 @@ class LogConfig:
     wandb_exp_name: str = "exp_name"
     log_file: str = "/root/test.log"
     log_interval: int = 5
+    tensorboard_log_dir: str = "/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/tensorboard"

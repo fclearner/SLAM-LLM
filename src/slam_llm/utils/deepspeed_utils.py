@@ -19,6 +19,7 @@ from tqdm import tqdm
 from transformers import LlamaTokenizer
 from typing import Any, Callable, List, Optional
 from textwrap import dedent
+from torch.utils.tensorboard import SummaryWriter
 from hydra import version
 from hydra.main import _UNSPECIFIED_, _get_rerun_conf
 from hydra._internal.deprecation_warning import deprecation_warning
@@ -153,6 +154,8 @@ def train(
     #     scaler = ShardedGradScaler()
     # elif train_config.use_fp16 and not train_config.enable_fsdp:
     #     scaler = torch.cuda.amp.GradScaler()
+    writer = SummaryWriter(log_dir=log_config.tensorboard_log_dir)
+
     if train_config.enable_ddp:
         world_size = int(os.environ["WORLD_SIZE"])
     autocast = torch.cuda.amp.autocast if train_config.use_fp16 else nullcontext
@@ -223,6 +226,10 @@ def train(
                 total_loss += loss.detach().float()
                 total_acc += acc
 
+                # Log loss to TensorBoard
+                writer.add_scalar('train/loss', loss.item(), epoch * len(train_dataloader) + step)
+                writer.add_scalar('train/acc', acc.item(), epoch * len(train_dataloader) + step)
+
                 # deepspeed should handle gradient accumulate
                 model.backward(loss)
                 model.step()
@@ -246,7 +253,9 @@ def train(
                     )
                     eval_epoch_acc = rest[0] if rest else -1
                     checkpoint_start_time = time.perf_counter()
-
+                    # Log loss to TensorBoard
+                    writer.add_scalar('valid/loss', eval_epoch_loss.item(), epoch)
+                    writer.add_scalar('valid/acc', eval_epoch_acc.item(), epoch)
                     if train_config.save_model and (eval_epoch_loss < best_val_loss):
                         checkpoint_name = f"{train_config.model_name}_epoch_{str(epoch+1)}_step_{step+1}"
                         save_model_checkpoint_deepspeed(

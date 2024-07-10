@@ -21,15 +21,19 @@ speech_encoder_path=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/models/chines
 #/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/models/chinese-hubert-large/chinese-hubert-large-fairseq-ckpt.pt
 #/root/autodl-tmp/hubert_xtralarge_ll60k_finetune_ls960.pt
 
-llm_path=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/models/Qwen2-7B/
+llm_path=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/models/MiniCPM-2B-dpo-fp16/
+#/root/autodl-tmp/Vicuna-7B
+#/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/models/Qwen2-7B/ 3584
 
-output_dir=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/exp/qwen2-7b-aishell-linear-steplrwarmupkeep1e-4-hubert-$(date +"%Y%m%d")-deepspeed
+output_dir=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/exp/minicpm-2b-dpo-fp16-aishell-linear-steplrwarmupkeep1e-4-hubert-$(date +"%Y%m%d")-deepspeed
+
+mkdir -p $output_dir/tensorboard
 
 hydra_args="
 hydra.run.dir=$output_dir \
-++model_config.llm_name=qwen2-7b \
+++model_config.llm_name=minicpm-2b-dpo-fp16 \
 ++model_config.llm_path=$llm_path \
-++model_config.llm_dim=3584 \
+++model_config.llm_dim=2304 \
 ++model_config.encoder_name=hubert \
 ++model_config.encoder_projector_ds_rate=5 \
 ++model_config.encoder_path=$speech_encoder_path \
@@ -40,7 +44,6 @@ hydra.run.dir=$output_dir \
 ++dataset_config.train_data_path=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/data/train_data.jsonl \
 ++dataset_config.val_data_path=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/data/dev_data.jsonl \
 ++dataset_config.input_type=raw \
-++dataset_config.prompt="语音转写成文本" \
 ++train_config.model_name=asr \
 ++train_config.num_epochs=3 \
 ++train_config.enable_deepspeed=true \
@@ -52,11 +55,10 @@ hydra.run.dir=$output_dir \
 ++train_config.lr=1e-4 \
 ++train_config.validation_interval=2000 \
 ++train_config.batch_size_training=6 \
-++train_config.quantization=true \
-++train_config.use_fast_kernels=true \
 ++train_config.val_batch_size=4 \
 ++train_config.num_workers_dataloader=4 \
 ++train_config.output_dir=$output_dir \
+++log_config.tensorboard_log_dir=$output_dir/tensorboard \
 ++metric=acc \
 "
 # ++train_config.use_peft=true \

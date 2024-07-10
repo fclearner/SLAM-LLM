@@ -111,6 +111,24 @@ class AVHubertEncoder:
         model = models[0]
         return model
 
+# class HubertEncoder:
+
+#     @classmethod
+#     def load(cls, model_config):
+#         import fairseq
+#         models, cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task([model_config.encoder_path])
+
+#         model = models[0]
+#         if model_config.encoder_type == "pretrain":
+#             pass
+#         elif model_config.encoder_type == "finetune":
+#             model.w2v_encoder.proj = None
+#             model.w2v_encoder.apply_mask = False
+#         else:
+#             assert model_config.encoder_type in ["pretrain", "finetune"], "input_type must be one of [pretrain, finetune]" 
+#         return model
+
+
 class HubertEncoder:
 
     @classmethod
@@ -121,29 +139,14 @@ class HubertEncoder:
         if model_config.encoder_type == "pretrain":
             pass
         elif model_config.encoder_type == "finetune":
-            model.w2v_encoder.proj = None
-            model.w2v_encoder.apply_mask = False
+            model.skip_nomask = True
+            cfg.skip_nomask=True
+            pass
+            # model.final_proj = None
+            # model.apply_mask = False
         else:
             assert model_config.encoder_type in ["pretrain", "finetune"], "input_type must be one of [pretrain, finetune]" 
         return model
-
-
-# class HubertEncoder:
-
-#     @classmethod
-#     def load(cls, model_config):
-#         import fairseq
-#         models, cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task([model_config.encoder_path])
-#         model = models[0]
-#         if model_config.encoder_type == "pretrain":
-#             pass
-#         elif model_config.encoder_type == "finetune":
-#             pass
-#             # model.final_proj = None
-#             # model.apply_mask = False
-#         else:
-#             assert model_config.encoder_type in ["pretrain", "finetune"], "input_type must be one of [pretrain, finetune]" 
-#         return model
 
 
 class HfTextEncoder:

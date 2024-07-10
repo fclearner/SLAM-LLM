@@ -59,6 +59,10 @@ def setup_tokenizer(train_config, model_config, **kwargs):
         tokenizer = AutoTokenizer.from_pretrained(model_config.llm_path,
                                             trust_remote_code=True,
                                             use_fast=False)
+    elif "qwen" in model_config.llm_name.lower():
+        tokenizer = AutoTokenizer.from_pretrained(model_config.llm_path)
+        tokenizer.bos_token_id = tokenizer.eos_token_id
+        tokenizer.pad_token_id = tokenizer.eos_token_id
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_config.llm_path)
         tokenizer.pad_token_id = tokenizer.eos_token_id
@@ -170,6 +174,14 @@ def setup_llm(train_config, model_config, **kwargs):
                 load_in_8bit=True if train_config.quantization else None,
                 device_map="auto" if train_config.quantization else None,
                 use_cache=use_cache,
+            )
+        elif "minicpm" in model_config.llm_name.lower():
+            model = AutoModelForCausalLM.from_pretrained(
+                model_config.llm_path,
+                load_in_8bit=True if train_config.quantization else None,
+                device_map="auto" if train_config.quantization else None,
+                use_cache=use_cache,
+                trust_remote_code=True,
             )
         else:
             model = AutoModelForCausalLM.from_pretrained(
