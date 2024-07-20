@@ -254,8 +254,8 @@ def train(
                     eval_epoch_acc = rest[0] if rest else -1
                     checkpoint_start_time = time.perf_counter()
                     # Log loss to TensorBoard
-                    writer.add_scalar('valid/loss', eval_epoch_loss.item(), epoch)
-                    writer.add_scalar('valid/acc', eval_epoch_acc.item(), epoch)
+                    writer.add_scalar('valid/loss', eval_epoch_loss.item(), epoch * len(train_dataloader) + step)
+                    writer.add_scalar('valid/acc', eval_epoch_acc.item(), epoch * len(train_dataloader) + step)
                     if train_config.save_model and (eval_epoch_loss < best_val_loss):
                         checkpoint_name = f"{train_config.model_name}_epoch_{str(epoch+1)}_step_{step+1}"
                         save_model_checkpoint_deepspeed(
