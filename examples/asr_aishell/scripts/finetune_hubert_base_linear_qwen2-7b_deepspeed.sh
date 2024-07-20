@@ -16,14 +16,17 @@ run_dir=/root/autodl-tmp/SLAM-LLM
 cd $run_dir
 code_dir=examples/asr_aishell
 
+encoder_name=hubert_base
 speech_encoder_path=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/models/chinese-hubert-base/chinese-hubert-base-fairseq-ckpt.pt
+
+llm_name=qwen2-7b
 #/root/autodl-tmp/hubert_xtralarge_ll60k_finetune_ls960.pt
 #/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/models/chinese-hubert-large/chinese-hubert-large-fairseq-ckpt.pt
 #/root/autodl-tmp/hubert_xtralarge_ll60k_finetune_ls960.pt
 
 llm_path=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/models/Qwen2-7B/
-
-output_dir=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/exp/qwen2-7b-aishell-linear-steplrwarmupkeep1e-4-hubert_base-$(date +"%Y%m%d")-deepspeed2
+output_name=$llm_name-aishell-linear-steplrwarmupkeep1e-4-$encoder_name-$(date +"%Y%m%d")-deepspeed
+output_dir=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/exp/$output_name
 
 hydra_args="
 hydra.run.dir=$output_dir \
@@ -52,12 +55,14 @@ hydra.run.dir=$output_dir \
 ++train_config.validation_interval=2000 \
 ++train_config.batch_size_training=4 \
 ++train_config.quantization=true \
-++train_config.use_fast_kernels=true \
+++train_config.use_fast_kernels=false \
 ++train_config.val_batch_size=6 \
 ++train_config.num_workers_dataloader=4 \
 ++train_config.output_dir=$output_dir \
+++log_config.tensorboard_log_dir=$/root/tf-logs/$output_dir
 ++metric=acc \
 "
+# qwen2不支持fast_kernels
 # ++train_config.use_peft=true \
 # ++train_config.peft_config.r=32 \
 # ++model_config.encoder_projector=linear \
