@@ -93,6 +93,9 @@ def setup_encoder(train_config, model_config, **kwargs):
         if encoder_name == "av_hubert":
             from slam_llm.models.encoder import AVHubertEncoder
             encoder = AVHubertEncoder.load(model_config)
+        if encoder_name == "torchaudio_hubert":
+            from slam_llm.models.encoder import TorchaudioHubertEncoder
+            encoder = TorchaudioHubertEncoder.load(model_config)
         if encoder_name == "hubert":
             from slam_llm.models.encoder import HubertEncoder
             encoder = HubertEncoder.load(model_config)
@@ -187,7 +190,6 @@ def setup_llm(train_config, model_config, **kwargs):
             model = AutoModelForCausalLM.from_pretrained(
                 model_config.llm_path,
                 load_in_8bit=True if train_config.quantization else None,
-                device_map="auto" if train_config.quantization else None,
                 use_cache=use_cache,
             )
     if (train_config.enable_fsdp or train_config.enable_ddp) and train_config.use_fast_kernels:
@@ -304,6 +306,7 @@ class slam_model(nn.Module):
         audio_mel_post_mask = kwargs.get("audio_mel_post_mask", None) # 2x downsample for whisper
 
         audio = kwargs.get("audio", None)
+        audio_lens = kwargs.get("audio_lens", None)
         audio_mask = kwargs.get("audio_mask", None)
         visual = kwargs.get("visual", None)
         visual_mask = kwargs.get("visual_mask", None)
@@ -333,6 +336,14 @@ class slam_model(nn.Module):
                 encoder_outs = self.encoder(audio) # output: [bs, seq_len=3+512, dim=768]
             if self.model_config.encoder_name == "wavlm":
                 encoder_outs = self.encoder.extract_features(audio, 1 - audio_mask) #(FIX:MZY): 1-audio_mask is needed for wavlm as the padding mask
+            if self.model_config.encoder_name == "torchaudio_hubert":
+                results = self.encoder(audio, audio_lens)
+                if self.model_config.encoder_type == "pretrain":
+                    encoder_outs = results[0]
+                    audio_mel_post_mask = None
+                if self.model_config.encoder_type == "finetune":
+                    encoder_outs, audio_mel_post_mask = results["encoder_out"], results["padding_mask"]
+                    encoder_outs = encoder_outs.transpose(0, 1)
             if self.model_config.encoder_name == "hubert":
                 results = self.encoder(source = audio, padding_mask = 1-audio_mask)
                 if self.model_config.encoder_type == "pretrain":

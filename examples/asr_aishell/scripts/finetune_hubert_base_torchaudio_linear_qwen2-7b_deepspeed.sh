@@ -17,7 +17,8 @@ cd $run_dir
 code_dir=examples/asr_aishell
 
 encoder_name=hubert_base
-speech_encoder_path=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/models/chinese-hubert-base/chinese-hubert-base-fairseq-ckpt.pt
+speech_encoder_path=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/models/simpleoier_librispeech_hubert_iter0_train_ssl_torchaudiohubert_base_960h_pretrain_it0_raw/exp/hubert_iter0_train_ssl_torchaudiohubert_base_960h_pretrain_it0_raw/modified_valid.loss.ave.pth
+speech_encoder_yaml=/root/autodl-tmp/SLAM-LLM/examples/asr_aishell/models/simpleoier_librispeech_hubert_iter0_train_ssl_torchaudiohubert_base_960h_pretrain_it0_raw/exp/hubert_iter0_train_ssl_torchaudiohubert_base_960h_pretrain_it0_raw/config.yaml
 
 llm_name=qwen2-7b
 #/root/autodl-tmp/hubert_xtralarge_ll60k_finetune_ls960.pt
@@ -33,10 +34,10 @@ hydra.run.dir=$output_dir \
 ++model_config.llm_name=qwen2-7b \
 ++model_config.llm_path=$llm_path \
 ++model_config.llm_dim=3584 \
-++model_config.encoder_name=hubert \
+++model_config.encoder_name=torchaudio_hubert \
 ++model_config.encoder_projector_ds_rate=5 \
 ++model_config.encoder_path=$speech_encoder_path \
-++model_config.encoder_yaml=$speech_encoder_path \
+++model_config.encoder_yaml=$speech_encoder_yaml \
 ++model_config.encoder_dim=768 \
 ++model_config.encoder_projector=linear \
 ++model_config.encoder_type=pretrain \
@@ -54,13 +55,13 @@ hydra.run.dir=$output_dir \
 ++train_config.total_steps=100000 \
 ++train_config.lr=1e-4 \
 ++train_config.validation_interval=2000 \
-++train_config.batch_size_training=4 \
+++train_config.batch_size_training=24 \
 ++train_config.quantization=true \
 ++train_config.use_fast_kernels=false \
-++train_config.val_batch_size=6 \
+++train_config.val_batch_size=24 \
 ++train_config.num_workers_dataloader=4 \
 ++train_config.output_dir=$output_dir \
-++log_config.tensorboard_log_dir=$/root/tf-logs/$output_dir
+++log_config.tensorboard_log_dir=/root/tf-logs/$output_name
 ++metric=acc \
 "
 # qwen2不支持fast_kernels
@@ -100,10 +101,9 @@ hydra.run.dir=$output_dir \
 # fi
 
 deepspeed \
-    --include localhost:0 \
+    --num_gpus 2 \
     $code_dir/deepspeed_finetune_asr.py \
     $hydra_args
-    # --num_gpus=1 \
     # --num_nodes=1 \
 
 # -m debugpy --listen 5678 --wait-for-client
