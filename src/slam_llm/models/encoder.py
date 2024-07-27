@@ -111,42 +111,51 @@ class AVHubertEncoder:
         model = models[0]
         return model
 
+class TorchaudioHubertEncoder:
+
+    @classmethod
+    def load(cls, model_config):
+        import yaml
+        from slam_llm.models.encoders.hubert_encoder import TorchAudioHuBERTPretrainEncoder
+
+        with open(model_config.encoder_yaml, "r", encoding="utf-8") as f:
+            pretrained_cfg = yaml.safe_load(f)
+        model = TorchAudioHuBERTPretrainEncoder(input_size=80, finetuning=True, **pretrained_cfg['encoder_conf'])
+        # input_size没用到，随便给
+
+        params = torch.load(model_config.encoder_path)
+
+        model.load_state_dict(params)
+
+        if model_config.encoder_type == "pretrain":
+            pass
+        elif model_config.encoder_type == "finetune":
+            pass
+            # model.w2v_encoder.proj = None
+            # model.w2v_encoder.apply_mask = False
+        else:
+            assert model_config.encoder_type in ["pretrain", "finetune"], "input_type must be one of [pretrain, finetune]" 
+        return model
+
+
 # class HubertEncoder:
 
 #     @classmethod
 #     def load(cls, model_config):
 #         import fairseq
 #         models, cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task([model_config.encoder_path])
-
 #         model = models[0]
 #         if model_config.encoder_type == "pretrain":
 #             pass
 #         elif model_config.encoder_type == "finetune":
-#             model.w2v_encoder.proj = None
-#             model.w2v_encoder.apply_mask = False
+#             model.skip_nomask = True
+#             cfg.skip_nomask=True
+#             pass
+#             # model.final_proj = None
+#             # model.apply_mask = False
 #         else:
 #             assert model_config.encoder_type in ["pretrain", "finetune"], "input_type must be one of [pretrain, finetune]" 
 #         return model
-
-
-class HubertEncoder:
-
-    @classmethod
-    def load(cls, model_config):
-        import fairseq
-        models, cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task([model_config.encoder_path])
-        model = models[0]
-        if model_config.encoder_type == "pretrain":
-            pass
-        elif model_config.encoder_type == "finetune":
-            model.skip_nomask = True
-            cfg.skip_nomask=True
-            pass
-            # model.final_proj = None
-            # model.apply_mask = False
-        else:
-            assert model_config.encoder_type in ["pretrain", "finetune"], "input_type must be one of [pretrain, finetune]" 
-        return model
 
 
 class HfTextEncoder:

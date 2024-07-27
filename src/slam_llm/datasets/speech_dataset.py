@@ -241,8 +241,10 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
             audio_raw = torch.stack([self.pad(s['audio'], audio_raw_max_length, 0)
                                      for s in samples])
             audio_mask = torch.zeros(len(samples), audio_raw_max_length)
+            audio_lens = torch.zeros(len(samples))
             for line, sample in enumerate(samples):
                 audio_mask[line, :sample['audio'].shape[0]] = 1
+                audio_lens[line] = sample['audio'].shape[0]
         elif self.input_type == "mel":
             audio_mel_max_length = max([s['audio_mel'].shape[0] for s in samples])
             audio_mel = torch.stack([self.pad(s['audio_mel'], audio_mel_max_length, 0)
@@ -264,6 +266,7 @@ class SpeechDatasetJsonl(torch.utils.data.Dataset):
                 "input_ids": input_ids,
                 "attention_mask": attention_mask,
                 "audio": audio_raw if self.input_type == "raw" else None,
+                "audio_lens": audio_lens if self.input_type == "raw" else None,
                 "audio_mask": audio_mask if self.input_type == "raw" else None,
                 "audio_mel": audio_mel if self.input_type == "mel" else None,
                 "audio_mel_post_mask": audio_mel_post_mask if self.input_type == "mel" else None,
