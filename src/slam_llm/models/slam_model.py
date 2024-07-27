@@ -189,6 +189,7 @@ def setup_llm(train_config, model_config, **kwargs):
                 load_in_8bit=True if train_config.quantization else None,
                 device_map="auto" if train_config.quantization else None,
                 use_cache=use_cache,
+                attn_implementation="flash_attention_2"
             )
     if (train_config.enable_fsdp or train_config.enable_ddp) and train_config.use_fast_kernels:
         """
